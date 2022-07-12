@@ -1,6 +1,8 @@
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <stdlib.h>
+#include <Windows.h>
 
 #define BUFFER_SIZE 16
 
@@ -11,7 +13,7 @@ void CheckX32(FILE* fp);
 void ViewMenu(FILE* fp);
 void selectMenu(int menuOption, FILE* fp);
 void ViewHex_32(FILE* fp);
-//void ViewPE_32(FILE* fp);
+void ViewPE_32(FILE* fp);
 //void ViewHex_64(FILE* fp);
 //void ViewPE_64(FILE* fp);
 
@@ -87,7 +89,7 @@ void selectMenu(int menuOption, FILE* fp) {
 		break;
 	case 1:
 		if (x32Flag) {
-			//ViewPE_32(fp);
+			ViewPE_32(fp);
 		}
 		else {
 			//ViewPE_64(fp);
@@ -110,9 +112,9 @@ void ViewHex_32(FILE* fp) {
 
 	cout << "Offset(h)\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F \tDecoded text" << endl;
 	while ((read = fread(&buff, sizeof(char), BUFFER_SIZE, fp)) != 0) {
-		printf("%.8X\t", offset);
+		cout << setfill('0') << setw(8) << hex << offset << "\t";
 		for (num = 0; num < read; num++) {
-			printf("%.2X ", buff[num] & 0xFF);
+			cout << setfill('0') << setw(2) << hex << (buff[num] & 0xFF) << ' ';
 			if ((buff[num] & 0xFF) >= 33 && (buff[num] & 0xFF) <= 126) {
 				decodedBuff[num] = buff[num];
 			}
@@ -123,4 +125,67 @@ void ViewHex_32(FILE* fp) {
 		offset += read;
 		cout << "\t" << decodedBuff << endl;
 	}
+}
+
+void ViewPE_32(FILE* fp) {
+
+	int fileSize, count;
+	fseek(fp, 0, SEEK_END);
+	fileSize = ftell(fp);
+
+	char* buff = new char[fileSize+1];
+	fseek(fp, 0, SEEK_SET);
+	count = fread(buff, fileSize, 1, fp);
+
+	// IMAGE_DOS_HEADER
+	struct _IMAGE_DOS_HEADER* idh = (_IMAGE_DOS_HEADER *)buff;
+	cout << endl << "---------- [IMAGE_DOS_HEADER] ----------" << endl;
+	cout << "e_magic : " << setfill('0') << setw(4) << hex << idh->e_magic << endl;
+	cout << "e_lfanew : " << setfill('0') << setw(8) << hex << idh->e_lfanew << endl;
+
+	// IMAGE_NT_HEADERS
+	struct _IMAGE_NT_HEADERS* inh = (_IMAGE_NT_HEADERS *)(buff + idh->e_lfanew);
+	cout << endl << "---------- [IMAGE_NT_HEADERS > Signature] ----------" << endl;
+	cout << "Signature : " << setfill('0') << setw(8) << hex << inh->Signature << endl;
+
+	struct _IMAGE_FILE_HEADER *ifh = &(inh->FileHeader);
+	cout << "---------- [IMAGE_NT_HEADERS > IMAGE_FILE_HEADER] ----------" << endl;
+	cout << "Machine : " << setfill('0') << setw(4) << hex << ifh->Machine << endl;
+	cout << "Number of Sections : " << setfill('0') << setw(4) << hex << ifh->NumberOfSections << endl;
+	cout << "Time Date Stamp : " << setfill('0') << setw(8) << hex << ifh->TimeDateStamp << endl;
+	cout << "Size of Optional Header : " << setfill('0') << setw(4) << hex << ifh->SizeOfOptionalHeader << endl;
+	cout << "Characteristics : " << setfill('0') << setw(4) << hex << ifh->Characteristics << endl;
+
+	struct _IMAGE_OPTIONAL_HEADER* ioh = &(inh->OptionalHeader);
+	cout << "---------- [IMAGE_NT_HEADERS > IMAGE_OPTIONAL_HEADER32] ----------" << endl;
+	cout << "Magic : " << setfill('0') << setw(4) << hex << ioh->Magic << endl;
+	cout << "MajorLinkerVersion : " << setfill('0') << setw(2) << hex << (unsigned short)(ioh->MajorLinkerVersion) << endl;
+	cout << "MinorLinkerVersion : " << setfill('0') << setw(2) << hex << (unsigned short)(ioh->MinorLinkerVersion) << endl;
+	cout << "SizeOfCode : " << setfill('0') << setw(8) << hex << ioh->SizeOfCode << endl;
+	cout << "SizeOfInitializedData : " << setfill('0') << setw(8) << hex << ioh->SizeOfInitializedData << endl;
+	cout << "SizeOfUninitializedData : " << setfill('0') << setw(8) << hex << ioh->SizeOfUninitializedData << endl;
+	cout << "AddressOfEntryPoint : " << setfill('0') << setw(8) << hex << ioh->AddressOfEntryPoint << endl;
+	cout << "BaseOfCode : " << setfill('0') << setw(8) << hex << ioh->BaseOfCode << endl;
+	cout << "BaseOfData : " << setfill('0') << setw(8) << hex << ioh->BaseOfData << endl;
+	cout << "ImageBase : " << setfill('0') << setw(8) << hex << ioh->ImageBase << endl;
+	cout << "SectionAlignment : " << setfill('0') << setw(8) << hex << ioh->SectionAlignment << endl;
+	cout << "FileAlignment : " << setfill('0') << setw(8) << hex << ioh->FileAlignment << endl;
+	cout << "MajorOperatingSystemVersion : " << setfill('0') << setw(4) << hex << ioh->MajorOperatingSystemVersion << endl;
+	cout << "MinorOperatingSystemVersion : " << setfill('0') << setw(4) << hex << ioh->MinorOperatingSystemVersion << endl;
+	cout << "MajorImageVersion : " << setfill('0') << setw(4) << hex << ioh->MajorImageVersion << endl;
+	cout << "MinorImageVersion : " << setfill('0') << setw(4) << hex << ioh->MinorImageVersion << endl;
+	cout << "MajorSubsystemVersion : " << setfill('0') << setw(4) << hex << ioh->MajorSubsystemVersion << endl;
+	cout << "MinorSubsystemVersion : " << setfill('0') << setw(4) << hex << ioh->MinorSubsystemVersion << endl;
+	cout << "Win32VersionValue : " << setfill('0') << setw(8) << hex << ioh->Win32VersionValue << endl;
+	cout << "SizeOfImage : " << setfill('0') << setw(8) << hex << ioh->SizeOfImage << endl;
+	cout << "SizeOfHeaders : " << setfill('0') << setw(8) << hex << ioh->SizeOfHeaders << endl;
+	cout << "CheckSum : " << setfill('0') << setw(8) << hex << ioh->CheckSum << endl;
+	cout << "Subsystem : " << setfill('0') << setw(4) << hex << ioh->Subsystem << endl;
+	cout << "DllCharacteristics : " << setfill('0') << setw(4) << hex << ioh->DllCharacteristics << endl;
+	cout << "SizeOfStackReserve : " << setfill('0') << setw(8) << hex << ioh->SizeOfStackReserve << endl;
+	cout << "SizeOfStackCommit : " << setfill('0') << setw(8) << hex << ioh->SizeOfStackCommit << endl;
+	cout << "SizeOfHeapReserve : " << setfill('0') << setw(8) << hex << ioh->SizeOfHeapReserve << endl;
+	cout << "SizeOfHeapCommit : " << setfill('0') << setw(8) << hex << ioh->SizeOfHeapCommit << endl;
+	cout << "LoaderFlags : " << setfill('0') << setw(8) << hex << ioh->LoaderFlags << endl;
+	cout << "NumberOfRvaAndSizes : " << setfill('0') << setw(8) << hex << ioh->NumberOfRvaAndSizes << endl;
 }
