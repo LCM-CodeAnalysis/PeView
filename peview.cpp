@@ -14,6 +14,8 @@ void ViewMenu(FILE* fp);
 void selectMenu(int menuOption, FILE* fp);
 void ViewHex_32(FILE* fp);
 void ViewPE_32(FILE* fp);
+void ViewCharacteristics(unsigned short characteristics);
+const char* ViewSubsystem(unsigned short subsystem);
 //void ViewHex_64(FILE* fp);
 //void ViewPE_64(FILE* fp);
 
@@ -155,6 +157,8 @@ void ViewPE_32(FILE* fp) {
 	cout << "Time Date Stamp : " << setfill('0') << setw(8) << hex << ifh->TimeDateStamp << endl;
 	cout << "Size of Optional Header : " << setfill('0') << setw(4) << hex << ifh->SizeOfOptionalHeader << endl;
 	cout << "Characteristics : " << setfill('0') << setw(4) << hex << ifh->Characteristics << endl;
+	// 각 Characteristics 마다 무슨 권한인지 출력
+	ViewCharacteristics(ifh->Characteristics);
 
 	struct _IMAGE_OPTIONAL_HEADER* ioh = &(inh->OptionalHeader);
 	cout << "---------- [IMAGE_NT_HEADERS > IMAGE_OPTIONAL_HEADER32] ----------" << endl;
@@ -180,7 +184,7 @@ void ViewPE_32(FILE* fp) {
 	cout << "SizeOfImage : " << setfill('0') << setw(8) << hex << ioh->SizeOfImage << endl;
 	cout << "SizeOfHeaders : " << setfill('0') << setw(8) << hex << ioh->SizeOfHeaders << endl;
 	cout << "CheckSum : " << setfill('0') << setw(8) << hex << ioh->CheckSum << endl;
-	cout << "Subsystem : " << setfill('0') << setw(4) << hex << ioh->Subsystem << endl;
+	cout << "Subsystem : " << setfill('0') << setw(4) << hex << ioh->Subsystem << "\t" << ViewSubsystem(ioh->Subsystem) << endl;
 	cout << "DllCharacteristics : " << setfill('0') << setw(4) << hex << ioh->DllCharacteristics << endl;
 	cout << "SizeOfStackReserve : " << setfill('0') << setw(8) << hex << ioh->SizeOfStackReserve << endl;
 	cout << "SizeOfStackCommit : " << setfill('0') << setw(8) << hex << ioh->SizeOfStackCommit << endl;
@@ -188,4 +192,64 @@ void ViewPE_32(FILE* fp) {
 	cout << "SizeOfHeapCommit : " << setfill('0') << setw(8) << hex << ioh->SizeOfHeapCommit << endl;
 	cout << "LoaderFlags : " << setfill('0') << setw(8) << hex << ioh->LoaderFlags << endl;
 	cout << "NumberOfRvaAndSizes : " << setfill('0') << setw(8) << hex << ioh->NumberOfRvaAndSizes << endl;
+}
+
+void ViewCharacteristics(unsigned short characteristics) {
+	if (characteristics & IMAGE_FILE_RELOCS_STRIPPED) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_RELOCS_STRIPPED << "\tIMAGE_FILE_RELOCS_STRIPPED" << endl;
+	if (characteristics & IMAGE_FILE_EXECUTABLE_IMAGE) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_EXECUTABLE_IMAGE << "\tIMAGE_FILE_EXECUTABLE_IMAGE" << endl;
+	if (characteristics & IMAGE_FILE_LINE_NUMS_STRIPPED) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_LINE_NUMS_STRIPPED << "\tIMAGE_FILE_LINE_NUMS_STRIPPED" << endl;
+	if (characteristics & IMAGE_FILE_LOCAL_SYMS_STRIPPED) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_LOCAL_SYMS_STRIPPED << "\tIMAGE_FILE_LOCAL_SYMS_STRIPPED" << endl;
+	if (characteristics & IMAGE_FILE_AGGRESIVE_WS_TRIM) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_AGGRESIVE_WS_TRIM << "\tIMAGE_FILE_AGGRESIVE_WS_TRIM" << endl;
+	if (characteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_LARGE_ADDRESS_AWARE << "\tIMAGE_FILE_LARGE_ADDRESS_AWARE" << endl;
+	if (characteristics & IMAGE_FILE_BYTES_REVERSED_LO) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_BYTES_REVERSED_LO << "\tIMAGE_FILE_BYTES_REVERSED_LO" << endl;
+	if (characteristics & IMAGE_FILE_32BIT_MACHINE) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_32BIT_MACHINE << "\tIMAGE_FILE_32BIT_MACHINE" << endl;
+	if (characteristics & IMAGE_FILE_DEBUG_STRIPPED) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_DEBUG_STRIPPED << "\tIMAGE_FILE_DEBUG_STRIPPED" << endl;
+	if (characteristics & IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP << "\tIMAGE_FILE_REMOVABLE_RUN_FROM_SWAP" << endl;
+	if (characteristics & IMAGE_FILE_NET_RUN_FROM_SWAP) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_NET_RUN_FROM_SWAP << "\tIMAGE_FILE_NET_RUN_FROM_SWAP" << endl;
+	if (characteristics & IMAGE_FILE_SYSTEM) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_SYSTEM << "\tIMAGE_FILE_SYSTEM" << endl;
+	if (characteristics & IMAGE_FILE_DLL) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_DLL << "\tIMAGE_FILE_DLL" << endl;
+	if (characteristics & IMAGE_FILE_UP_SYSTEM_ONLY) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_UP_SYSTEM_ONLY << "\tIMAGE_FILE_UP_SYSTEM_ONLY" << endl;
+	if (characteristics & IMAGE_FILE_BYTES_REVERSED_HI) cout << "\t" << setfill('0') << setw(4) << IMAGE_FILE_BYTES_REVERSED_HI << "\tIMAGE_FILE_BYTES_REVERSED_HI" << endl;
+}
+
+const char* ViewSubsystem(unsigned short subsystem) {
+	if (subsystem & IMAGE_SUBSYSTEM_NATIVE) {
+		return "IMAGE_SUBSYSTEM_NATIVE";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_WINDOWS_GUI) {
+		return "IMAGE_SUBSYSTEM_WINDOWS_GUI";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_WINDOWS_CUI) {
+		return "IMAGE_SUBSYSTEM_WINDOWS_CUI";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_OS2_CUI) {
+		return "IMAGE_SUBSYSTEM_OS2_CUI";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_POSIX_CUI) {
+		return "IMAGE_SUBSYSTEM_POSIX_CUI";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_NATIVE_WINDOWS) {
+		return "IMAGE_SUBSYSTEM_NATIVE_WINDOWS";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_WINDOWS_CE_GUI) {
+		return "IMAGE_SUBSYSTEM_WINDOWS_CE_GUI";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_EFI_APPLICATION) {
+		return "IMAGE_SUBSYSTEM_EFI_APPLICATION";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER) {
+		return "IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER) {
+		return "IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_EFI_ROM) {
+		return "IMAGE_SUBSYSTEM_EFI_ROM";
+	}
+	else if (subsystem & IMAGE_SUBSYSTEM_XBOX) {
+		return "IMAGE_SUBSYSTEM_XBOX";
+	}
+	else {
+		return "IMAGE_SUBSYSTEM_UNKNOWN";
+	}
 }
