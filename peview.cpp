@@ -16,6 +16,9 @@ void ViewHex_32(FILE* fp);
 void ViewPE_32(FILE* fp);
 void ViewCharacteristics(unsigned short characteristics);
 const char* ViewSubsystem(unsigned short subsystem);
+void ViewDataDirectory(IMAGE_DATA_DIRECTORY* dataDirectorys, int size);
+void ViewImageSectionHeader(char* buff);
+void ViewImportDirectoryTable(char* buff, FILE* fp);
 //void ViewHex_64(FILE* fp);
 //void ViewPE_64(FILE* fp);
 
@@ -192,6 +195,17 @@ void ViewPE_32(FILE* fp) {
 	cout << "SizeOfHeapCommit : " << setfill('0') << setw(8) << hex << ioh->SizeOfHeapCommit << endl;
 	cout << "LoaderFlags : " << setfill('0') << setw(8) << hex << ioh->LoaderFlags << endl;
 	cout << "NumberOfRvaAndSizes : " << setfill('0') << setw(8) << hex << ioh->NumberOfRvaAndSizes << endl;
+
+	// _IMAGE_DATA_DIRECTORY
+	ViewDataDirectory(ioh->DataDirectory, sizeof(ioh->DataDirectory) / sizeof(IMAGE_DATA_DIRECTORY));
+	cout << endl;
+
+	// IMAGE_SECTION_HEADER
+	for (int i = 0; i < ifh->NumberOfSections; i++) {
+		ViewImageSectionHeader(buff + idh->e_lfanew + 0x78 + (ioh->NumberOfRvaAndSizes * 8) + (0x28 * i));
+	}
+
+	ViewImportDirectoryTable(buff, fp);
 }
 
 void ViewCharacteristics(unsigned short characteristics) {
@@ -251,5 +265,84 @@ const char* ViewSubsystem(unsigned short subsystem) {
 	}
 	else {
 		return "IMAGE_SUBSYSTEM_UNKNOWN";
+	}
+}
+
+void ViewDataDirectory(IMAGE_DATA_DIRECTORY* dataDirectorys, int size) {
+	const char* directoryNameArr[16] = { "IMAGE_DIRECTORY_ENTRY_EXPORT", "IMAGE_DIRECTORY_ENTRY_IMPORT", "IMAGE_DIRECTORY_ENTRY_RESOURCE", "IMAGE_DIRECTORY_ENTRY_EXCEPTION",
+		"IMAGE_DIRECTORY_ENTRY_SECURITY", "IMAGE_DIRECTORY_ENTRY_BASERELOC", "IMAGE_DIRECTORY_ENTRY_DEBUG", "IMAGE_DIRECTORY_ENTRY_ARCHITECTURE", "IMAGE_DIRECTORY_ENTRY_GLOBALPTR",
+		"IMAGE_DIRECTORY_ENTRY_TLS", "IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG", "IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT", "IMAGE_DIRECTORY_ENTRY_IAT", "IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT", "IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR", "" };
+	for (int i = 0; i < size; i++) {
+		cout << "\tRVA : " << setfill('0') << setw(8) << hex << dataDirectorys[i].VirtualAddress << "\t" << directoryNameArr[i] << endl;
+		cout << "\tSize : " << setfill('0') << setw(8) << hex << dataDirectorys[i].Size << endl;
+	}
+	if (size > 2) {
+		importTableRVA = dataDirectorys[1].VirtualAddress;
+		importTableSize = dataDirectorys[1].Size / 20;
+	}
+}
+
+void ViewImageSectionHeader(char* buff) {
+	struct _IMAGE_SECTION_HEADER* ish = (_IMAGE_SECTION_HEADER*)buff;
+	cout << endl << "---------- [IMAGE_SECTION_HEADER " << ish->Name << "] ----------" << endl;
+	cout << "\tName : " << (ish->Name)+1;
+	cout << endl;
+	cout << "\tVirtual Size : " << setfill('0') << setw(8) << hex << ish->Misc.VirtualSize << endl;
+	cout << "\tRVA : " << setfill('0') << setw(8) << hex << ish->VirtualAddress << endl;
+	cout << "\tSize of Raw Data : " << setfill('0') << setw(8) << hex << ish->SizeOfRawData << endl;
+	cout << "\tPointer to Raw Data : " << setfill('0') << setw(8) << hex << ish->PointerToRawData << endl;
+	cout << "\tPointer to Relocations : " << setfill('0') << setw(8) << hex << ish->PointerToRelocations << endl;
+	cout << "\tPointer to Line Numbers : " << setfill('0') << setw(8) << hex << ish->PointerToLinenumbers << endl;
+	cout << "\tNumber of Relocations : " << setfill('0') << setw(4) << hex << ish->NumberOfRelocations << endl;
+	cout << "\tNumber of Line Numbers : " << setfill('0') << setw(4) << hex << ish->NumberOfLinenumbers << endl;
+	cout << "\tCharacteristics : " << setfill('0') << setw(8) << hex << ish->Characteristics << endl;
+	if (ish->Characteristics & IMAGE_SCN_CNT_CODE) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_CNT_CODE << "\tIMAGE_SCN_CNT_CODE" << endl;
+	if (ish->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_CNT_INITIALIZED_DATA << "\tIMAGE_SCN_CNT_INITIALIZED_DATA" << endl;
+	if (ish->Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_CNT_UNINITIALIZED_DATA << "\tIMAGE_SCN_CNT_UNINITIALIZED_DATA" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_FARDATA) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_FARDATA << "\tIMAGE_SCN_MEM_FARDATA" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_PURGEABLE) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_PURGEABLE << "\tIMAGE_SCN_MEM_PURGEABLE" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_16BIT) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_16BIT << "\tIMAGE_SCN_MEM_16BIT" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_LOCKED) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_LOCKED << "\tIMAGE_SCN_MEM_LOCKED" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_PRELOAD) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_PRELOAD << "\tIMAGE_SCN_MEM_PRELOAD" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_DISCARDABLE) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_DISCARDABLE << "\tIMAGE_SCN_MEM_DISCARDABLE" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_NOT_CACHED) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_NOT_CACHED << "\tIMAGE_SCN_MEM_NOT_CACHED" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_NOT_PAGED) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_NOT_PAGED << "\tIMAGE_SCN_MEM_NOT_PAGED" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_SHARED) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_SHARED << "\tIMAGE_SCN_MEM_SHARED" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_EXECUTE) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_EXECUTE << "\tIMAGE_SCN_MEM_EXECUTE" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_READ) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_READ << "\tIMAGE_SCN_MEM_READ" << endl;
+	if (ish->Characteristics & IMAGE_SCN_MEM_WRITE) cout << "\t\t" << setfill('0') << setw(8) << hex << IMAGE_SCN_MEM_WRITE << "\tIMAGE_SCN_MEM_WRITE" << endl;
+
+	// Find the section ImportDirectoryTable belong to
+	if (importTableRVA >= (unsigned int)(ish->VirtualAddress) && importTableRVA <= ((unsigned int)(ish->VirtualAddress) + (unsigned int)(ish->Misc.VirtualSize))) {
+		sectionRVA = ish->VirtualAddress;
+		sectionRAW = ish->PointerToRawData;
+	}
+}
+
+void ViewImportDirectoryTable(char* buff, FILE* fp) {
+	if (importTableRVA == 0) {
+		return;
+	}
+
+	cout << endl << endl << "---------- [IMPORT Directory Table] ----------" << endl;
+	struct _IMAGE_IMPORT_DESCRIPTOR* importDirectorys = (_IMAGE_IMPORT_DESCRIPTOR*)(buff + (sectionRAW + importTableRVA - sectionRVA));
+	char temp[30] = { 0 };
+	for (int i = 0; i < importTableSize; i++) {
+		cout << "Import Name Table RVA : " << setfill('0') << setw(8) << hex << importDirectorys[i].OriginalFirstThunk << endl;
+		cout << "Time Date Stamp : " << setfill('0') << setw(8) << hex << importDirectorys[i].TimeDateStamp << endl;
+		cout << "Forwarder Chain : " << setfill('0') << setw(8) << hex << importDirectorys[i].ForwarderChain << endl;
+		fseek(fp, importDirectorys[i].Name - 0x1000 + 0x400, SEEK_SET);
+		fgets(temp, 30, fp);
+		cout << "Name RVA : " << setfill('0') << setw(8) << hex << importDirectorys[i].Name;
+		if (importDirectorys[i].Name == 0 && importDirectorys[i].FirstThunk == 0) {
+			cout << endl;
+		}
+		else {
+			fseek(fp, importDirectorys[i].Name - 0x1000 + 0x400, SEEK_SET);
+			fgets(temp, 30, fp);
+			cout << "\t" << temp << endl;
+		}
+		cout << "Import Address Table RVA : " << setfill('0') << setw(8) << hex << importDirectorys[i].FirstThunk << endl;
+		cout << "--------------------------------------------------" << endl;
 	}
 }
