@@ -7,7 +7,7 @@
 using namespace std;
 
 bool CheckSignature(FILE* fp);
-void CheckX32(FILE* fp);
+void CheckBit(FILE* fp);
 void ViewMenu(FILE* fp);
 void selectMenu(int menuOption, FILE* fp);
 void ViewHex_32(FILE* fp);
@@ -26,7 +26,7 @@ int main() {
 	FILE* fp = fopen(filePath, "rb");
 	
 	if (CheckSignature(fp)) {
-		CheckX32(fp);
+		CheckBit(fp);
 		ViewMenu(fp);
 	}
 }
@@ -44,7 +44,7 @@ bool CheckSignature(FILE* fp) {
 	}
 }
 
-void CheckX32(FILE* fp) {
+void CheckBit(FILE* fp) {
 	char temp[4];
 	long long_image_nt_header_start_offset;
 	unsigned char machine[5];
@@ -122,5 +122,6 @@ void ViewHex_32(FILE* fp) {
 		}
 		offset += read;
 		cout << "\t" << decodedBuff << endl;
+		//printf("\t%s\n", decodedBuff);
 	}
 }
